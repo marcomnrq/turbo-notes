@@ -67,8 +67,8 @@ export default function NotePage({
 
   if (loading) {
     return (
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-2xl space-y-4 p-6">
+      <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto h-full min-h-[600px] w-full max-w-5xl space-y-4 rounded-2xl border border-black/10 bg-card p-8 shadow-sm">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
@@ -79,12 +79,10 @@ export default function NotePage({
   }
 
   return (
-    <main className="flex-1">
-      <NoteEditor
-        noteId={resolved.id}
-        categories={categories}
-        initialNote={note}
-      />
-    </main>
+    <NoteEditor
+      noteId={resolved.id}
+      categories={categories}
+      initialNote={note}
+    />
   );
 }

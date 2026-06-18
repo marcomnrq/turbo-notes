@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,7 +9,6 @@ import { toast } from "sonner";
 import { PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -16,11 +16,33 @@ interface AuthFormProps {
   mode: "login" | "signup";
 }
 
+const COPY = {
+  login: {
+    image: "/images/sleepy-cat.png",
+    heading: "Welcome back!",
+    submitLabel: "Log In",
+    footerPrefix: "Not friends yet? ",
+    footerLink: "Sign up",
+    footerHref: "/signup",
+    imageAlt: "A sleepy cat illustration",
+  },
+  signup: {
+    image: "/images/cactus.png",
+    heading: "Yay, New Friend!",
+    submitLabel: "Sign Up",
+    footerPrefix: "",
+    footerLink: "We're already friends!",
+    footerHref: "/login",
+    imageAlt: "A cute cactus illustration",
+  },
+} as const;
+
 /** Email/password form shared by the login and signup pages. */
 export function AuthForm({ mode }: AuthFormProps) {
   const isSignup = mode === "signup";
   const { login, signup } = useAuth();
   const router = useRouter();
+  const copy = COPY[mode];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,9 +64,20 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+    <div className="flex w-full max-w-sm flex-col items-center">
+      <Image
+        src={copy.image}
+        alt={copy.imageAlt}
+        width={120}
+        height={120}
+        className="mb-6 h-28 w-28 object-contain"
+        priority
+      />
+      <h1 className="mb-8 text-center font-heading text-5xl font-bold leading-none text-brand">
+        {copy.heading}
+      </h1>
+
+      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
         <Input
           id="email"
           type="email"
@@ -52,36 +85,40 @@ export function AuthForm({ mode }: AuthFormProps) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder="Email address"
+          aria-label="Email address"
+          className="h-12 w-full rounded-full border-brand-muted bg-background px-6 text-sm placeholder:text-black/60 focus-visible:border-brand focus-visible:ring-brand/30"
         />
-      </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
         <PasswordInput
           id="password"
           required
           minLength={isSignup ? 8 : undefined}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder="Password"
+          aria-label="Password"
+          className="h-12 w-full rounded-full border-brand-muted bg-background px-6 pe-12 text-sm placeholder:text-black/60 focus-visible:border-brand focus-visible:ring-brand/30"
         />
-      </div>
 
-      <Button type="submit" size="lg" disabled={submitting} className="w-full">
-        {submitting ? "Please wait…" : isSignup ? "Create account" : "Log in"}
-      </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        {isSignup ? "Already have an account? " : "Don't have an account? "}
-        <Link
-          href={isSignup ? "/login" : "/signup"}
-          className="font-medium text-foreground underline-offset-4 hover:underline"
+        <Button
+          type="submit"
+          size="lg"
+          disabled={submitting}
+          className="h-12 w-full rounded-full bg-brand-btn font-bold text-brand-btn-foreground hover:bg-brand-btn/90"
         >
-          {isSignup ? "Log in" : "Sign up"}
-        </Link>
-      </p>
-    </form>
+          {submitting ? "Please wait…" : copy.submitLabel}
+        </Button>
+      </form>
+
+      <Link
+        href={copy.footerHref}
+        className="mt-6 text-center text-sm text-brand-muted underline underline-offset-4 hover:text-brand"
+      >
+        {copy.footerPrefix}
+        {copy.footerLink}
+      </Link>
+    </div>
   );
 }
 

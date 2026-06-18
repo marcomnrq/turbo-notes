@@ -6,9 +6,9 @@ from notes.models import Category
 
 # The three categories every new user starts with, with their display colors.
 DEFAULT_CATEGORIES = (
-    ("Random Thoughts", "#8b5cf6"),  # violet
-    ("School", "#3b82f6"),  # blue
-    ("Personal", "#ec4899"),  # pink
+    ("Random Thoughts", "#EF9C66"),  # orange
+    ("Personal", "#78ABA8"),  # green
+    ("School", "#F3D68B"),  # yellow
 )
 
 

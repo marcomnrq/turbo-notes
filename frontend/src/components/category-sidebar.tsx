@@ -12,8 +12,8 @@ interface CategorySidebarProps {
 }
 
 /**
- * Left sidebar listing "All notes" plus each category with its color swatch,
- * name, and note count. Clicking a category filters the notes list.
+ * Left sidebar listing "All Categories" plus each category with its color
+ * swatch, name, and note count. Clicking a category filters the notes list.
  */
 export function CategorySidebar({
   categories,
@@ -23,17 +23,17 @@ export function CategorySidebar({
 }: CategorySidebarProps) {
   return (
     <nav className="flex flex-col gap-1">
+      <div className="px-2.5 pb-2">
+        <span className="text-sm font-semibold tracking-tight text-foreground">
+          All Categories
+        </span>
+      </div>
       <SidebarItem
         label="All"
         count={totalCount}
         active={activeId === null}
         onClick={() => onSelect(null)}
       />
-      <div className="px-2 pb-1 pt-3">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Categories
-        </span>
-      </div>
       {categories.map((category) => (
         <SidebarItem
           key={category.id}
@@ -70,8 +70,8 @@ function SidebarItem({
       className={cn(
         "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
         active
-          ? "bg-muted text-foreground"
-          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          ? "bg-black/5 text-foreground"
+          : "text-muted-foreground hover:bg-black/5 hover:text-foreground",
       )}
     >
       {color ? (
@@ -82,7 +82,7 @@ function SidebarItem({
         />
       ) : (
         <span
-          className="size-3 shrink-0 rounded-full border border-border"
+          className="size-3 shrink-0 rounded-full border border-current opacity-40"
           aria-hidden
         />
       )}

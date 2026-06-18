@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, Trash2Icon } from "lucide-react";
+import { Trash2Icon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, notesApi } from "@/lib/api";
 import { surfaceTint } from "@/lib/color";
-import { formatNoteDate } from "@/lib/date";
+import { formatNoteDate, formatNoteTimestamp } from "@/lib/date";
 import type { Category, Note } from "@/lib/types";
 
 interface NoteEditorProps {
@@ -157,27 +157,20 @@ export function NoteEditor({
   const loading = !note;
 
   return (
-    <div
-      className="flex h-full flex-col"
-      style={activeCategory ? surfaceTint(activeCategory.color) : undefined}
-    >
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeftIcon data-icon="inline-start" />
-          <span className="hidden sm:inline">Back</span>
-        </Button>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {saveLabel(saveState, note?.updated_at)}
-          </span>
+    // Cream frame around the tinted workspace card.
+    <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
+      <div
+        className="mx-auto flex h-full max-h-[calc(100vh-7rem)] min-h-[600px] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-black/10 shadow-sm"
+        style={activeCategory ? surfaceTint(activeCategory.color) : undefined}
+      >
+        {/* Header: category pill (left) + close / delete (right) */}
+        <div className="flex items-center justify-between gap-3 border-b border-black/10 px-5 py-4">
           <Select
             value={categoryId}
             onValueChange={(v) => handleCategoryChange(Number(v))}
             disabled={loading || categories.length === 0}
           >
-            <SelectTrigger size="sm" className="w-40">
+            <SelectTrigger className="h-9 w-fit gap-2 rounded-full border-black/15 bg-background/60 px-4 font-medium">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -196,72 +189,96 @@ export function NoteEditor({
             </SelectContent>
           </Select>
 
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Delete note"
-                  disabled={loading}
-                >
-                  <Trash2Icon />
-                </Button>
-              }
-            />
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this note?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This can't be undone. The note will be permanently removed.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+          <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Delete note"
+                    disabled={loading}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2Icon />
+                  </Button>
+                }
+              />
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This can&apos;t be undone. The note will be permanently
+                    removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-      {/* Editor body */}
-      {loading ? (
-        <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-6">
-          <Skeleton className="h-10 w-2/3" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Close note"
+              onClick={() => router.push("/notes")}
+              className="text-foreground"
+            >
+              <XIcon />
+            </Button>
+          </div>
         </div>
-      ) : (
-        <div className="mx-auto flex h-full w-full max-w-2xl flex-1 flex-col gap-4 overflow-y-auto p-6">
-          <input
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="Note title"
-            className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/50"
-          />
-          <Textarea
-            value={content}
-            onChange={(e) => handleContentChange(e.target.value)}
-            placeholder="Start writing…"
-            className="min-h-[60vh] flex-1 resize-none border-0 bg-transparent p-0 text-base leading-relaxed shadow-none focus-visible:ring-0"
-          />
-        </div>
-      )}
-    </div>
+
+        {/* Editor body */}
+        {loading ? (
+          <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-8">
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ) : (
+          <div className="mx-auto flex h-full w-full max-w-2xl flex-1 flex-col gap-4 overflow-y-auto p-8">
+            {/* Last-edited timestamp, upper-right quadrant */}
+            <div className="flex justify-end">
+              <span className="text-xs text-brand-muted tabular-nums">
+                {saveLabel(saveState, note?.updated_at)}
+              </span>
+            </div>
+
+            <input
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder="Note Title"
+              className="w-full bg-transparent font-heading text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-black/30"
+            />
+            <Textarea
+              value={content}
+              onChange={(e) => handleContentChange(e.target.value)}
+              placeholder="Pour your heart out..."
+              className="min-h-[50vh] flex-1 resize-none border-0 bg-transparent p-0 text-base leading-relaxed text-foreground shadow-none placeholder:text-black/40 focus-visible:ring-0"
+            />
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
 
 function saveLabel(state: SaveState, updatedAt?: string): string {
   if (state === "saving") return "Saving…";
   if (state === "saved") return "Saved";
-  if (updatedAt) return `Last edited ${formatNoteDate(updatedAt)}`;
+  if (updatedAt)
+    return `Last Edited: ${formatNoteTimestamp(updatedAt)} · ${formatNoteDate(
+      updatedAt,
+    )}`;
   return "";
 }

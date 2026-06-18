@@ -26,8 +26,8 @@ export function NotesHeader() {
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b px-4">
-      <span className="text-base font-semibold tracking-tight">
+    <header className="flex h-14 items-center justify-between border-b border-black/10 px-4">
+      <span className="font-heading text-lg font-bold tracking-tight text-brand">
         Turbo Notes
       </span>
       <DropdownMenu>
