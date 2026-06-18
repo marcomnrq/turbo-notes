@@ -7,6 +7,12 @@
       "skillPath": "plugins/django-expert/skills/SKILL.md",
       "computedHash": "a6b8c224017570496d688a526fcbea74025a01cc90d9afb0977bfcc1f76af306"
     },
+    "improve": {
+      "source": "shadcn/improve",
+      "sourceType": "github",
+      "skillPath": "skills/improve/SKILL.md",
+      "computedHash": "39a9358732dcff385e9e4d3e60b4547856f834e54a58b35e455aa9bd49928c13"
+    },
     "lang-typescript": {
       "source": "ravnhq/ai-toolkit",
       "sourceType": "github",
