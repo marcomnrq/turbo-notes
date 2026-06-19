@@ -136,7 +136,7 @@ export function NoteEditor({
     // Top bar (category selector + X) sits above the tinted card. Both share
     // the full available width so the card's 3px border aligns with the left
     // edge of the selector and the right edge of the X button.
-    <main className="flex flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6 lg:p-8">
+    <main className="flex w-full flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6 lg:p-8">
       <div className="flex h-full flex-col">
         {/* Top bar: category pill (left) + close (right). Sits above the card;
             the card below aligns to this row's edges. */}
@@ -226,7 +226,7 @@ export function NoteEditor({
                 value={content}
                 onChange={(e) => handleContentChange(e.target.value)}
                 placeholder="Pour your heart out..."
-                className="min-h-[50vh] flex-1 resize-none border-0 bg-transparent p-0 text-base leading-relaxed text-foreground shadow-none placeholder:text-black/40 focus-visible:ring-0"
+                className="flex-1 resize-none border-0 bg-transparent p-0 text-base leading-relaxed text-foreground shadow-none placeholder:text-black/40 focus-visible:ring-0"
               />
             </div>
           )}

@@ -32,7 +32,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${inriaSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex h-full w-full flex-col">
         <AuthProvider>
           {children}
           <Toaster richColors position="top-center" />

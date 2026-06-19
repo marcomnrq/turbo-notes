@@ -93,9 +93,9 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full w-full flex-col">
       {/* Full-width header: New Note button pinned to the right. */}
-      <header className="flex items-center justify-end p-4">
+      <header className="flex shrink-0 items-center justify-end p-4">
         <Button
           variant="outline"
           onClick={handleNewNote}
@@ -142,24 +142,21 @@ export default function NotesPage() {
 
         {/* Main column */}
         <section className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex flex-1 flex-col overflow-y-auto p-6">
             {loading ? (
               <div className="flex flex-wrap gap-4">
                 {["a", "b", "c", "d", "e", "f"].map((key) => (
-                  <Skeleton
-                    key={key}
-                    className="h-[246px] w-[303px] rounded-2xl"
-                  />
+                  <Skeleton key={key} className="h-64 w-80 rounded-2xl" />
                 ))}
               </div>
             ) : notes.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
                 <Image
                   src="/images/bubble-tea.png"
                   alt="A bubble tea illustration"
                   width={297}
                   height={296}
-                  className="max-h-[50vh] w-auto max-w-[80vw] object-contain"
+                  className="max-h-[40vh] w-auto max-w-[60vw] object-contain"
                   priority
                 />
                 <p className="font-sans text-2xl font-normal leading-none tracking-normal text-brand-muted">
