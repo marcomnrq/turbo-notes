@@ -1,0 +1,36 @@
+# Keep the build context lean and avoid leaking local state into the image.
+# Migrations are intentionally NOT ignored.
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Django local state
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# Git / editor / OS
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+
+# Env files (examples are kept; real secrets never enter the image)
+.env
+.env.*
+!.env.example
+
+# Docker
+Dockerfile
+.dockerignore
