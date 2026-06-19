@@ -219,6 +219,7 @@ export function NoteEditor({
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Note Title"
+                aria-label="Note title"
                 className="w-full bg-transparent font-heading text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-black/30"
               />
               <Textarea

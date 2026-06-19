@@ -9,7 +9,7 @@
  */
 
 /** Convert a "#rrggbb" hex string to an `rgba(r, g, b, alpha)` string. */
-export function hexToRgba(hex: string, alpha: number): string {
+function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace("#", "");
   const r = Number.parseInt(normalized.slice(0, 2), 16);
   const g = Number.parseInt(normalized.slice(2, 4), 16);
