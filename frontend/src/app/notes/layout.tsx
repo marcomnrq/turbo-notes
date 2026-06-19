@@ -1,15 +1,8 @@
-import { NotesHeader } from "@/components/notes-header";
-
-/** App shell: sticky header + content area for the notes section. */
+/** App shell for the notes section. Each page renders its own header. */
 export default function NotesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="flex h-screen flex-col">
-      <NotesHeader />
-      <div className="flex flex-1 overflow-hidden">{children}</div>
-    </div>
-  );
+  return <div className="flex h-screen overflow-hidden">{children}</div>;
 }

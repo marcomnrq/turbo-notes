@@ -1,21 +1,10 @@
 "use client";
 
-import { Trash2Icon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -62,7 +51,6 @@ export function NoteEditor({
     initialNote?.category,
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [deleting, setDeleting] = useState(false);
 
   const dirtyRef = useRef({ title, content });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -141,37 +129,40 @@ export function NoteEditor({
     void persist("category", value);
   }
 
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      await notesApi.delete(noteId);
-      toast.success("Note deleted.");
-      router.push("/notes");
-    } catch {
-      toast.error("Couldn't delete the note.");
-      setDeleting(false);
-    }
-  }
-
   const activeCategory = categories.find((c) => c.id === categoryId);
   const loading = !note;
 
   return (
-    // Cream frame around the tinted workspace card.
-    <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
-      <div
-        className="mx-auto flex h-full max-h-[calc(100vh-7rem)] min-h-[600px] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-black/10 shadow-sm"
-        style={activeCategory ? surfaceTint(activeCategory.color) : undefined}
-      >
-        {/* Header: category pill (left) + close / delete (right) */}
-        <div className="flex items-center justify-between gap-3 border-b border-black/10 px-5 py-4">
+    // Top bar (category selector + X) sits above the tinted card. Both share
+    // the full available width so the card's 3px border aligns with the left
+    // edge of the selector and the right edge of the X button.
+    <main className="flex flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6 lg:p-8">
+      <div className="flex h-full flex-col">
+        {/* Top bar: category pill (left) + close (right). Sits above the card;
+            the card below aligns to this row's edges. */}
+        <div className="flex items-center justify-between gap-3 px-1 pb-3">
           <Select
             value={categoryId}
             onValueChange={(v) => handleCategoryChange(Number(v))}
             disabled={loading || categories.length === 0}
           >
-            <SelectTrigger className="h-9 w-fit gap-2 rounded-full border-black/15 bg-background/60 px-4 font-medium">
-              <SelectValue placeholder="Category" />
+            <SelectTrigger className="h-[39px] w-[225px] gap-2 rounded-md border-black/15 bg-background/60 px-[15px] py-[7px] font-medium">
+              <SelectValue placeholder="Category">
+                {(value: number | null) => {
+                  const cat = categories.find((c) => c.id === value);
+                  if (!cat) return "Category";
+                  return (
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="size-2.5 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                        aria-hidden
+                      />
+                      {cat.name}
+                    </span>
+                  );
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
@@ -190,41 +181,6 @@ export function NoteEditor({
           </Select>
 
           <div className="flex items-center gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Delete note"
-                    disabled={loading}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2Icon />
-                  </Button>
-                }
-              />
-              <AlertDialogContent size="sm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this note?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This can&apos;t be undone. The note will be permanently
-                    removed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
             <Button
               variant="ghost"
               size="icon-sm"
@@ -237,37 +193,43 @@ export function NoteEditor({
           </div>
         </div>
 
-        {/* Editor body */}
-        {loading ? (
-          <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-8">
-            <Skeleton className="h-10 w-2/3" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        ) : (
-          <div className="mx-auto flex h-full w-full max-w-2xl flex-1 flex-col gap-4 overflow-y-auto p-8">
-            {/* Last-edited timestamp, upper-right quadrant */}
-            <div className="flex justify-end">
-              <span className="text-xs text-brand-muted tabular-nums">
-                {saveLabel(saveState, note?.updated_at)}
-              </span>
+        {/* Tinted editor card: 3px border, category-colored background.
+            Spans the same width as the top bar above (selector → X). */}
+        <div
+          className="flex flex-1 flex-col overflow-hidden rounded-2xl border-[3px] border-black/10 shadow-sm"
+          style={activeCategory ? surfaceTint(activeCategory.color) : undefined}
+        >
+          {loading ? (
+            <div className="mx-auto w-full max-w-6xl flex-1 space-y-4 p-8">
+              <Skeleton className="h-10 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
             </div>
+          ) : (
+            <div className="mx-auto flex h-full w-full max-w-6xl flex-1 flex-col gap-4 overflow-y-auto p-8">
+              {/* Last-edited timestamp, upper-right quadrant */}
+              <div className="flex justify-end">
+                <span className="text-xs text-brand-muted tabular-nums">
+                  {saveLabel(saveState, note?.updated_at)}
+                </span>
+              </div>
 
-            <input
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="Note Title"
-              className="w-full bg-transparent font-heading text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-black/30"
-            />
-            <Textarea
-              value={content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="Pour your heart out..."
-              className="min-h-[50vh] flex-1 resize-none border-0 bg-transparent p-0 text-base leading-relaxed text-foreground shadow-none placeholder:text-black/40 focus-visible:ring-0"
-            />
-          </div>
-        )}
+              <input
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="Note Title"
+                className="w-full bg-transparent font-heading text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-black/30"
+              />
+              <Textarea
+                value={content}
+                onChange={(e) => handleContentChange(e.target.value)}
+                placeholder="Pour your heart out..."
+                className="min-h-[50vh] flex-1 resize-none border-0 bg-transparent p-0 text-base leading-relaxed text-foreground shadow-none placeholder:text-black/40 focus-visible:ring-0"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

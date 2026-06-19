@@ -103,9 +103,9 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         <Button
           type="submit"
-          size="lg"
+          variant="outline"
           disabled={submitting}
-          className="h-12 w-full rounded-full bg-brand-btn font-bold text-brand-btn-foreground hover:bg-brand-btn/90"
+          className="h-12 w-full rounded-full"
         >
           {submitting ? "Please wait…" : copy.submitLabel}
         </Button>
