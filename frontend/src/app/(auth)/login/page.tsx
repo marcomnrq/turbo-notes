@@ -1,4 +1,4 @@
-import { AuthForm } from "@/components/auth-form";
+import { AuthForm } from "@/components/features/auth/auth-form";
 
 export const metadata = { title: "Log in · Turbo Notes" };
 

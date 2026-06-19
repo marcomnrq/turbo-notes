@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { PasswordInput } from "@/components/password-input";
+import { PasswordInput } from "@/components/features/auth/password-input";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
 
 interface AuthFormProps {
   mode: "login" | "signup";

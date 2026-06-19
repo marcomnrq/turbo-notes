@@ -39,7 +39,8 @@ describe("api client auth header", () => {
     const fn = fetchMock([{ status: 200, body: [] }]);
     vi.stubGlobal("fetch", fn);
     await categoriesApi.list();
-    const [url, init] = fn.mock.calls[0];
+    // biome-ignore lint/style/noNonNullAssertion: call is guaranteed by categoriesApi.list() above
+    const [url, init] = fn.mock.calls[0]!;
     // Calls go to the full Django URL, not a same-origin proxy.
     expect(url).toBe(`${API_URL}/api/categories`);
     const headers = (init as RequestInit).headers as Headers;
@@ -51,7 +52,8 @@ describe("api client auth header", () => {
     const fn = fetchMock([{ status: 401, body: { detail: "Unauthorized" } }]);
     vi.stubGlobal("fetch", fn);
     await expect(categoriesApi.list()).rejects.toBeInstanceOf(ApiError);
-    const [, init] = fn.mock.calls[0];
+    // biome-ignore lint/style/noNonNullAssertion: call is guaranteed by categoriesApi.list() above
+    const [, init] = fn.mock.calls[0]!;
     expect((init?.headers as Headers).get("Authorization")).toBeNull();
   });
 });

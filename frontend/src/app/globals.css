@@ -84,6 +84,24 @@
   --brand-muted: #957139;
   --brand-btn: #f3d68b;
   --brand-btn-foreground: #957139;
+  /*
+   * Component reference values. These are the spec dimensions pulled from the
+   * Figma design — declared here once and referenced via var() in the
+   * components so they can be tuned in a single place. Kept as reference
+   * values (not abstracted into the Tailwind scale) because they are tied to
+   * the design's pixel grid rather than the spacing scale.
+   */
+  /* Note preview card (notes list + card). */
+  --note-card-h: 18rem; /* 288px — min-height of a grid card. */
+  --note-card-w: 20rem; /* 320px — fixed card width in the grid. */
+  --note-card-border-w: 1.5px;
+  /* Editor category selector pill. */
+  --editor-select-h: 39px;
+  --editor-select-w: 225px;
+  --editor-select-px: 15px;
+  --editor-select-py: 7px;
+  /* Editor tinted card border. */
+  --editor-border-w: 3px;
   --sidebar: oklch(0.965 0.022 85);
   --sidebar-foreground: oklch(0.18 0.02 60);
   --sidebar-primary: oklch(0.18 0.02 60);

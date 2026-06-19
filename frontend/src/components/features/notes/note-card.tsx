@@ -22,7 +22,7 @@ export function NoteCard({ note, category }: NoteCardProps) {
   return (
     <Link
       href={`/notes/${note.id}`}
-      className="group flex min-h-72 w-80 flex-col gap-3 rounded-2xl border-[1.5px] p-5 transition-shadow hover:shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group flex min-h-[var(--note-card-h)] w-[var(--note-card-w)] flex-col gap-3 rounded-2xl border-[var(--note-card-border-w)] p-5 transition-shadow hover:shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       style={category ? cardTint(category.color) : undefined}
     >
       <div className="flex items-center gap-1.5 text-xs text-foreground">

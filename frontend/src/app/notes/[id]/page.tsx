@@ -1,17 +1,18 @@
 "use client";
 
 import { notFound } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { use } from "react";
 
-import { NoteEditor } from "@/components/note-editor";
+import { NoteEditor } from "@/components/features/notes/note-editor";
 import { Skeleton } from "@/components/ui/skeleton";
-import { categoriesApi, notesApi } from "@/lib/api";
-import type { Category, Note } from "@/lib/types";
+import { useCategories } from "@/hooks/use-categories";
+import { useNote } from "@/hooks/use-note";
 
 /**
- * Editor route. A client wrapper that resolves the note id from params and
- * loads the categories + note, then renders the editor.
+ * Editor route. Resolves the note id from params and loads the note, then
+ * renders the editor. Categories come from the shared TanStack cache (the
+ * same entry the list page populated), so opening a note issues no extra
+ * categories request.
  *
  * Auth (the access token) lives in the browser, so this page is a client
  * component: the API client attaches the token and the request flows through
@@ -22,50 +23,18 @@ export default function NotePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const [resolved, setResolved] = useState<{ id: number } | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [note, setNote] = useState<Note | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const { id: rawId } = use(params);
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) notFound();
 
-  // Resolve the (async) params promise.
-  useEffect(() => {
-    params.then(({ id }) => {
-      const noteId = Number(id);
-      if (Number.isInteger(noteId) && noteId > 0) {
-        setResolved({ id: noteId });
-      } else {
-        notFound();
-      }
-    });
-  }, [params]);
+  const categoriesQuery = useCategories();
+  const noteQuery = useNote(id);
 
-  // Load categories + note once the id resolves.
-  useEffect(() => {
-    if (!resolved) return;
-    let active = true;
-    (async () => {
-      try {
-        const [cats, n] = await Promise.all([
-          categoriesApi.list().catch(() => [] as Category[]),
-          notesApi.retrieve(resolved.id),
-        ]);
-        if (!active) return;
-        setCategories(cats);
-        setNote(n);
-      } catch {
-        if (active) toast.error("Couldn't open this note.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [resolved]);
+  const loading = categoriesQuery.isLoading || noteQuery.isLoading;
+  const categories = categoriesQuery.data ?? [];
+  const note = noteQuery.data;
 
-  if (!resolved) return null;
-
-  if (loading) {
+  if (loading || !note) {
     return (
       <main className="w-full flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
         <div className="mx-auto h-full w-full max-w-5xl space-y-4 rounded-2xl border border-black/10 bg-card p-8 shadow-sm">
@@ -78,11 +47,5 @@ export default function NotePage({
     );
   }
 
-  return (
-    <NoteEditor
-      noteId={resolved.id}
-      categories={categories}
-      initialNote={note}
-    />
-  );
+  return <NoteEditor noteId={id} categories={categories} initialNote={note} />;
 }

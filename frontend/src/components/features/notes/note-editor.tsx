@@ -2,7 +2,7 @@
 
 import { XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiError, notesApi } from "@/lib/api";
+import { useDebouncedSave } from "@/hooks/use-debounced-save";
+import { useUpdateNote } from "@/hooks/use-notes";
+import { ApiError } from "@/lib/api";
 import { surfaceTint } from "@/lib/color";
 import { formatNoteDate, formatNoteTimestamp } from "@/lib/date";
 import type { Category, Note } from "@/lib/types";
@@ -35,7 +37,9 @@ type SaveState = "idle" | "saving" | "saved";
  *   "Saving…/Saved" indicator and a live last-edited timestamp.
  * - Category can be switched via a dropdown, which also recolors the editor
  *   background to the category's color (mirroring the demo).
- * - Delete asks for confirmation, then returns to the notes list.
+ *
+ * Persistence flows through the `useUpdateNote` mutation, so the cache and the
+ * save indicator both reflect a single source of truth.
  */
 export function NoteEditor({
   noteId,
@@ -52,36 +56,19 @@ export function NoteEditor({
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
-  const dirtyRef = useRef({ title, content });
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateNote = useUpdateNote();
 
-  // Load the note if it wasn't passed in.
-  useEffect(() => {
-    if (initialNote) return;
-    let active = true;
-    notesApi
-      .retrieve(noteId)
-      .then((n) => {
-        if (!active) return;
-        setNote(n);
-        setTitle(n.title);
-        setContent(n.content);
-        setCategoryId(n.category);
-      })
-      .catch(() => {
-        toast.error("Couldn't open this note.");
-        router.push("/notes");
-      });
-    return () => {
-      active = false;
-    };
-  }, [noteId, initialNote, router]);
-
+  // Persist a single field, surfacing save state + the server's new note.
   const persist = useCallback(
     async (field: "title" | "content" | "category", value: string | number) => {
       setSaveState("saving");
       try {
-        const updated = await notesApi.update(noteId, { [field]: value });
+        const updated = await updateNote.mutateAsync({
+          id: noteId,
+          payload: { [field]: value } as Partial<
+            Pick<Note, "title" | "content" | "category">
+          >,
+        });
         setNote(updated);
         setSaveState("saved");
         // Clear the "saved" indicator shortly after.
@@ -99,29 +86,22 @@ export function NoteEditor({
         }
       }
     },
-    [noteId, router],
+    [noteId, router, updateNote],
   );
 
-  // Debounced autosave for title/content.
-  const scheduleSave = useCallback(
-    (field: "title" | "content", value: string) => {
-      dirtyRef.current[field] = value;
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        void persist(field, dirtyRef.current[field]);
-      }, 600);
-    },
-    [persist],
-  );
+  // Debounced autosave for title/content. Flushes on unmount automatically.
+  const { schedule } = useDebouncedSave<"title" | "content">((field, value) => {
+    void persist(field, value);
+  });
 
   function handleTitleChange(value: string) {
     setTitle(value);
-    scheduleSave("title", value);
+    schedule("title", value);
   }
 
   function handleContentChange(value: string) {
     setContent(value);
-    scheduleSave("content", value);
+    schedule("content", value);
   }
 
   function handleCategoryChange(value: number) {
@@ -146,7 +126,7 @@ export function NoteEditor({
             onValueChange={(v) => handleCategoryChange(Number(v))}
             disabled={loading || categories.length === 0}
           >
-            <SelectTrigger className="h-[39px] w-[225px] gap-2 rounded-md border-black/15 bg-background/60 px-[15px] py-[7px] font-medium">
+            <SelectTrigger className="h-[var(--editor-select-h)] w-[var(--editor-select-w)] gap-2 rounded-md border-black/15 bg-background/60 px-[var(--editor-select-px)] py-[var(--editor-select-py)] font-medium">
               <SelectValue placeholder="Category">
                 {(value: number | null) => {
                   const cat = categories.find((c) => c.id === value);
@@ -196,7 +176,7 @@ export function NoteEditor({
         {/* Tinted editor card: 3px border, category-colored background.
             Spans the same width as the top bar above (selector → X). */}
         <div
-          className="flex flex-1 flex-col overflow-hidden rounded-2xl border-[3px] border-black/10 shadow-sm"
+          className="flex flex-1 flex-col overflow-hidden rounded-2xl border-[var(--editor-border-w)] border-black/10 shadow-sm"
           style={activeCategory ? surfaceTint(activeCategory.color) : undefined}
         >
           {loading ? (
@@ -215,7 +195,11 @@ export function NoteEditor({
                 </span>
               </div>
 
+              <label htmlFor="note-title" className="sr-only">
+                Note title
+              </label>
               <input
+                id="note-title"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Note Title"

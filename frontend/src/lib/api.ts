@@ -112,8 +112,51 @@ async function request<T>(
     throw new ApiError(resp.status, resp.statusText, body);
   }
 
-  if (resp.status === 204) return undefined as T;
+  // Empty-body responses (204 / 205) are handled by `requestEmpty`, so a JSON
+  // caller's `T` is never secretly `undefined`.
   return (await resp.json()) as T;
+}
+
+/**
+ * Like `request`, but for endpoints that return no body (DELETE, 204s).
+ * Typed as `Promise<void>` so callers can't accidentally treat the result as
+ * data.
+ */
+async function requestEmpty(
+  path: string,
+  options: RequestInit = {},
+  retry = true,
+): Promise<void> {
+  const headers = new Headers(options.headers);
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const resp = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  if (resp.status === 401 && retry) {
+    const ok = await refreshAccessToken();
+    if (ok) return requestEmpty(path, options, false);
+    redirectToLogin();
+    throw new ApiError(401, "Unauthorized", null);
+  }
+
+  if (resp.status === 401) redirectToLogin();
+
+  if (!resp.ok) {
+    let body: unknown = null;
+    try {
+      body = await resp.json();
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(resp.status, resp.statusText, body);
+  }
+
+  // Drain the body so the underlying connection can be reused.
+  await resp.body?.cancel();
 }
 
 // ---------------------------------------------------------------------------
@@ -154,7 +197,7 @@ export async function logout(): Promise<void> {
   const refreshToken = getRefreshToken();
   if (refreshToken) {
     try {
-      await request(
+      await requestEmpty(
         "/api/auth/logout",
         {
           method: "POST",
@@ -221,7 +264,7 @@ export const notesApi = {
   },
 
   delete(id: number): Promise<void> {
-    return request<void>(`/api/notes/${id}`, { method: "DELETE" });
+    return requestEmpty(`/api/notes/${id}`, { method: "DELETE" });
   },
 };
 

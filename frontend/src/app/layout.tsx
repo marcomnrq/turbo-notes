@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Inria_Serif, Inter } from "next/font/google";
 import "./globals.css";
 
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/lib/auth";
 
 // Inter is the UI/body font; Inria Serif is used for headings and note titles.
 const inter = Inter({
@@ -33,10 +34,12 @@ export default function RootLayout({
       className={`${inter.variable} ${inriaSerif.variable} h-full antialiased`}
     >
       <body className="flex h-full w-full flex-col">
-        <AuthProvider>
-          {children}
-          <Toaster richColors position="top-center" />
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+            <Toaster richColors position="top-center" />
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

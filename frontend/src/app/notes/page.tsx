@@ -1,82 +1,32 @@
 "use client";
 
-import { PlusIcon } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useMemo, useState } from "react";
 
-import { NoteCard } from "@/components/note-card";
-import { Button } from "@/components/ui/button";
+import { CategoryButton } from "@/components/common/category-button";
+import { EmptyState } from "@/components/common/empty-state";
+import { NoteCard } from "@/components/features/notes/note-card";
+import { NotesHeader } from "@/components/layout/notes-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { categoriesApi, notesApi } from "@/lib/api";
-import type { Category, Note } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { useCategories } from "@/hooks/use-categories";
+import { useCreateNote, useNotes } from "@/hooks/use-notes";
 
 export default function NotesPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
   // Active category filter: null = show all. Clicking the active category
   // again clears the filter (toggle).
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
-  // Initial load: fetch categories + notes together on mount.
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const [cats, ns] = await Promise.all([
-          categoriesApi.list(),
-          notesApi.list(),
-        ]);
-        if (!active) return;
-        setCategories(cats);
-        setNotes(ns);
-      } catch {
-        if (active) toast.error("Couldn't load your notes.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const categoriesQuery = useCategories();
+  const notesQuery = useNotes({
+    category: activeCategory ?? undefined,
+  });
+  const createNote = useCreateNote();
 
-  // Re-fetch notes when the category filter changes.
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const ns = await notesApi.list({
-          category: activeCategory ?? undefined,
-        });
-        if (active) setNotes(ns);
-      } catch {
-        if (active) toast.error("Couldn't load your notes.");
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [activeCategory]);
-
-  // Refresh category counts after notes change. The dependency on `notes` is
-  // intentional — counts must update when notes are created/edited/deleted.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional trigger
-  useEffect(() => {
-    let active = true;
-    categoriesApi
-      .list()
-      .then((cats) => active && setCategories(cats))
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [notes]);
+  const categories = categoriesQuery.data ?? [];
+  const notes = notesQuery.data ?? [];
+  // A request is in flight only when we have nothing to show yet.
+  const loading = notesQuery.isLoading || categoriesQuery.isLoading;
 
   const categoryById = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
@@ -84,43 +34,29 @@ export default function NotesPage() {
   );
 
   async function handleNewNote() {
-    try {
-      const note = await notesApi.create({ title: "", content: "" });
-      router.push(`/notes/${note.id}`);
-    } catch {
-      toast.error("Couldn't create a new note.");
-    }
+    const note = await createNote.mutateAsync({ title: "", content: "" });
+    router.push(`/notes/${note.id}`);
   }
 
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Full-width header: New Note button pinned to the right. */}
-      <header className="flex shrink-0 items-center justify-end p-4">
-        <Button
-          variant="outline"
-          onClick={handleNewNote}
-          className="h-10 rounded-full"
-        >
-          <PlusIcon data-icon="inline-start" />
-          New Note
-        </Button>
-      </header>
+      <NotesHeader onNewNote={handleNewNote} disabled={createNote.isPending} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — category labels. Click to filter; click the active one again to clear. */}
         <aside className="w-60 shrink-0 overflow-y-auto p-3">
-          {loading ? (
+          {categoriesQuery.isLoading ? (
             <div className="flex flex-col gap-1">
               <Skeleton className="h-9 w-full" />
               <Skeleton className="mt-3 h-9 w-full" />
               <Skeleton className="h-9 w-full" />
             </div>
           ) : (
-            <nav className="flex flex-col gap-1">
+            <nav aria-label="Categories" className="flex flex-col gap-1">
               <div className="px-2.5 pb-2">
-                <span className="font-sans text-xs font-bold leading-none tracking-normal text-foreground">
+                <h1 className="font-sans text-xs font-bold leading-none tracking-normal text-foreground">
                   All Categories
-                </span>
+                </h1>
               </div>
               {categories.map((category) => (
                 <CategoryButton
@@ -150,19 +86,11 @@ export default function NotesPage() {
                 ))}
               </div>
             ) : notes.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-                <Image
-                  src="/images/bubble-tea.png"
-                  alt="A bubble tea illustration"
-                  width={297}
-                  height={296}
-                  className="max-h-[40vh] w-auto max-w-[60vw] object-contain"
-                  priority
-                />
-                <p className="font-sans text-2xl font-normal leading-none tracking-normal text-brand-muted">
-                  I&apos;m just here waiting for your charming notes...
-                </p>
-              </div>
+              <EmptyState
+                src="/images/bubble-tea.png"
+                alt="A bubble tea illustration"
+                message="I'm just here waiting for your charming notes..."
+              />
             ) : (
               <div className="flex flex-wrap gap-4">
                 {notes.map((note) => (
@@ -178,51 +106,5 @@ export default function NotesPage() {
         </section>
       </div>
     </div>
-  );
-}
-
-/** Clickable category row. Highlights when active (filter applied). */
-function CategoryButton({
-  label,
-  count,
-  color,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  color?: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 font-sans text-xs font-normal leading-none tracking-normal transition-colors",
-        active
-          ? "bg-black/5 text-foreground"
-          : "text-muted-foreground hover:bg-black/5 hover:text-foreground",
-      )}
-    >
-      {color ? (
-        <span
-          className="size-3 shrink-0 rounded-full"
-          style={{ backgroundColor: color }}
-          aria-hidden
-        />
-      ) : (
-        <span
-          className="size-3 shrink-0 rounded-full border border-current opacity-40"
-          aria-hidden
-        />
-      )}
-      <span className="flex-1 truncate text-left">{label}</span>
-      <span className="text-xs tabular-nums text-muted-foreground">
-        {count}
-      </span>
-    </button>
   );
 }
