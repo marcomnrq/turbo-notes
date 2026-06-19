@@ -37,6 +37,16 @@ def api_client() -> APIClient:
 
 
 @pytest.fixture
+def categories(user):
+    """The three default categories created by the signup signal."""
+    from notes.models import Category
+
+    cats = list(Category.objects.filter(user=user).order_by("name"))
+    assert len(cats) == 3, "signal should have created default categories"
+    return {c.name: c for c in cats}
+
+
+@pytest.fixture
 def auth_client(api_client, user) -> APIClient:
     """API client authenticated as `user` via a real JWT access token."""
     from rest_framework_simplejwt.tokens import RefreshToken

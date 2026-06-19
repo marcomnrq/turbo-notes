@@ -3,14 +3,6 @@ import pytest
 from notes.models import Category, Note
 
 
-@pytest.fixture
-def categories(user):
-    """The three default categories created by the signal."""
-    cats = list(Category.objects.filter(user=user).order_by("name"))
-    assert len(cats) == 3, "signal should have created default categories"
-    return {c.name: c for c in cats}
-
-
 @pytest.mark.django_db
 class TestCategoryList:
     url = "/api/categories"

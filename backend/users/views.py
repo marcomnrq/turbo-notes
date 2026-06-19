@@ -1,6 +1,6 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,7 +18,6 @@ class SignupView(CreateAPIView):
     follow-up login request.
     """
 
-    queryset = User.objects.all()
     serializer_class = SignupSerializer
     permission_classes = (AllowAny,)
 
@@ -77,8 +76,12 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
-class MeView(RetrieveUpdateDestroyAPIView):
-    """The current user's own profile (read-only for now)."""
+class MeView(RetrieveAPIView):
+    """The current user's own profile (read-only).
+
+    The frontend only needs to read the authenticated user's data;
+    updates or account deletion are not supported.
+    """
 
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticated,)

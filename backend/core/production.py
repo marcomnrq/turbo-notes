@@ -25,7 +25,6 @@ import os
 from core.settings import *  # noqa: F401,F403  (re-export the whole base config)
 from core.settings import _env_bool, _env_list
 
-
 # ── Secrets ─────────────────────────────────────────────────────────────────
 # Never fall back to the insecure dev key in production. Provide a
 # SECRET_KEY_FALLBACKS list (comma-separated) so existing sessions/tokens
@@ -66,7 +65,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Ramp up to SECURE_HSTS_SECONDS=31536000 + SECURE_HSTS_PRELOAD=true only once
 # you're certain HTTPS is permanent (preload list removal is slow).
 SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "3600"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+)
 SECURE_HSTS_PRELOAD = _env_bool("SECURE_HSTS_PRELOAD", default=False)
 
 

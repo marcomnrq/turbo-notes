@@ -1,4 +1,5 @@
 import pytest
+from django.db import IntegrityError
 
 from notes.models import Category
 
@@ -18,7 +19,5 @@ class TestDefaultCategoriesSignal:
         assert Category.objects.filter(user=user).count() == 3
 
     def test_unique_name_per_user(self, user):
-        from django.db import IntegrityError
-
         with pytest.raises(IntegrityError):
             Category.objects.create(user=user, name="School", color="#000000")

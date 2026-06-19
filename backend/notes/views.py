@@ -1,6 +1,7 @@
-from django.db.models import Count, Q
+from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListCreateAPIView
 
 from notes.models import Category, Note
@@ -39,13 +40,13 @@ class NoteViewSet(viewsets.ModelViewSet):
 
         category = self.request.query_params.get("category")
         if category:
+            try:
+                category = int(category)
+            except (TypeError, ValueError):
+                raise ValidationError(
+                    {"category": "A valid integer is required."}
+                ) from None
             queryset = queryset.filter(category_id=category)
-
-        search = self.request.query_params.get("search")
-        if search:
-            queryset = queryset.filter(
-                Q(title__icontains=search) | Q(content__icontains=search)
-            )
 
         return queryset.select_related("category")
 
@@ -55,15 +56,20 @@ class NoteViewSet(viewsets.ModelViewSet):
         If no category is supplied, default to the user's first category
         (created by the signup signal) so the demo's "create blank note
         instantly" flow works without the user picking one first.
+
+        Raises 400 if the user has zero categories (e.g. they were all
+        deleted externally) instead of an unhandled IntegrityError.
         """
-        if not serializer.validated_data.get("category"):
-            default_category = (
+        category = serializer.validated_data.get("category")
+        if not category:
+            category = (
                 Category.objects.filter(user=self.request.user).order_by("name").first()
             )
-            if default_category is not None:
-                serializer.save(user=self.request.user, category=default_category)
-                return
-        serializer.save(user=self.request.user)
+            if category is None:
+                raise ValidationError(
+                    {"category": "You must create a category before adding notes."}
+                )
+        serializer.save(user=self.request.user, category=category)
 
     @extend_schema(tags=["notes"])
     def list(self, request, *args, **kwargs):

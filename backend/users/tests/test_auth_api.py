@@ -149,3 +149,18 @@ class TestMe:
         resp = auth_client.get(self.url)
         assert resp.status_code == 200
         assert resp.json() == {"id": user.id, "email": user.email}
+
+    def test_me_rejects_update(self, auth_client):
+        """MeView is read-only; PUT/PATCH must return 405."""
+        assert (
+            auth_client.put(self.url, {"email": "x@y.com"}, format="json").status_code
+            == 405
+        )
+        assert (
+            auth_client.patch(self.url, {"email": "x@y.com"}, format="json").status_code
+            == 405
+        )
+
+    def test_me_rejects_delete(self, auth_client):
+        """MeView is read-only; DELETE must return 405."""
+        assert auth_client.delete(self.url).status_code == 405

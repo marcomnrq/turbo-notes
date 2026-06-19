@@ -173,6 +173,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": None,
     # Timestamps are returned in ISO-8601; the frontend formats for display.
     "DATETIME_FORMAT": None,
+    # Rate limiting to protect auth endpoints from brute-force attacks.
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "20/hour",
+        "user": "100/hour",
+    },
 }
 
 # Simple JWT

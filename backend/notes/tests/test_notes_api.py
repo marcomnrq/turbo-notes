@@ -3,11 +3,6 @@ import pytest
 from notes.models import Category, Note
 
 
-@pytest.fixture
-def categories(user):
-    return {c.name: c for c in Category.objects.filter(user=user)}
-
-
 def make_note(user, category, **kwargs):
     return Note.objects.create(user=user, category=category, **kwargs)
 
@@ -44,6 +39,13 @@ class TestNotesCreate:
         assert resp.status_code == 201
         assert resp.json()["category"] == categories["School"].id
 
+    def test_create_fails_when_no_categories_exist(self, auth_client, user):
+        """If all categories are deleted, creating a note must 400 gracefully."""
+        user.categories.all().delete()
+        resp = auth_client.post(NOTES, {"title": "orphan"}, format="json")
+        assert resp.status_code == 400
+        assert "category" in resp.json()
+
 
 @pytest.mark.django_db
 class TestNotesList:
@@ -65,6 +67,18 @@ class TestNotesList:
         resp = auth_client.get(NOTES, {"category": categories["School"].id})
         titles = {n["title"] for n in resp.json()}
         assert titles == {"s1"}
+
+    def test_filter_by_non_integer_category_returns_400(self, auth_client):
+        """A non-integer ?category must 400 (clean validation), not crash with 500."""
+        resp = auth_client.get(NOTES, {"category": "abc"})
+        assert resp.status_code == 400
+        assert "category" in resp.json()
+
+    def test_filter_by_whitespace_category_returns_400(self, auth_client):
+        """Whitespace-only ?category must also 400, matching any non-integer."""
+        resp = auth_client.get(NOTES, {"category": " "})
+        assert resp.status_code == 400
+        assert "category" in resp.json()
 
     def test_search_matches_title_or_content(self, auth_client, user, categories):
         make_note(
